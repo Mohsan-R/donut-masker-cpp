@@ -1,0 +1,48 @@
+# ===========================
+# Visual Studio
+# ===========================
+.vs/
+
+# ===========================
+# CMake
+# ===========================
+out/
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+compile_commands.json
+
+# ===========================
+# Visual Studio Build Files
+# ===========================
+Debug/
+Release/
+x64/
+
+# ===========================
+# Object Files
+# ===========================
+*.obj
+*.o
+
+# ===========================
+# Executables
+# ===========================
+*.exe
+*.pdb
+*.ilk
+
+# ===========================
+# Logs
+# ===========================
+*.log
+
+# ===========================
+# Keep output_samples folder
+# Ignore everything inside it
+# except .gitkeep
+# ===========================
+output_samples/*
+!output_samples/.gitkeep
