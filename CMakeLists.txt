@@ -40,14 +40,15 @@ include_directories(
 # Source Files
 # ==========================================================
 
+
+
+
 set(SOURCES
-
     src/main.cpp
-
     src/ImageLoader.cpp
-
     src/BatchProcessor.cpp
-
+    src/Preprocessor.cpp
+    src/DonutDetector.cpp
 )
 
 # ==========================================================
