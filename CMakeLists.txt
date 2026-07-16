@@ -44,11 +44,17 @@ include_directories(
 
 
 set(SOURCES
+
     src/main.cpp
     src/ImageLoader.cpp
     src/BatchProcessor.cpp
     src/Preprocessor.cpp
     src/DonutDetector.cpp
+    src/ContourExtractor.cpp
+    src/CandidateDetector.cpp
+    src/DonutMaskGenerator.cpp
+    src/HoleDetector.cpp
+
 )
 
 # ==========================================================
