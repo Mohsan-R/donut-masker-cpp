@@ -345,3 +345,8 @@ GitHub: https://github.com/Mohsan-R
 # License
 
 This project is provided for educational and technical assessment purposes.
+![alt text](donut1.jpg)
+![alt text](donut1-1.jpg)
+![alt text](donut1-2.jpg)
+![alt text](donut1-3.jpg)
+![alt text](donut1-4.jpg)
