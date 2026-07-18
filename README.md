@@ -340,11 +340,8 @@ BS Computer Science (FAST-NUCES)
 
 GitHub: https://github.com/Mohsan-R
 
----
-
-# License
-
-This project is provided for educational and technical assessment purposes.
+output images
+ 
 ![alt text](donut1.jpg)
 ![alt text](donut1-1.jpg)
 ![alt text](donut1-2.jpg)
