@@ -6,16 +6,13 @@
 class ContourExtractor
 {
 public:
+    ContourExtractor() = default;
+    ~ContourExtractor() = default;
 
-    std::vector<std::vector<cv::Point>>
-    extractContours(const cv::Mat& binaryImage);
-
-    std::vector<std::vector<cv::Point>>
-    filterContoursByArea(
-        const std::vector<std::vector<cv::Point>>& contours,
-        double minArea);
+    std::vector<std::vector<cv::Point>> extractContours(
+        const cv::Mat& binaryMask) const;
 
     cv::Mat drawFilledContours(
-        const cv::Mat& referenceImage,
-        const std::vector<std::vector<cv::Point>>& contours);
+        const cv::Mat& image,
+        const std::vector<std::vector<cv::Point>>& contours) const;
 };

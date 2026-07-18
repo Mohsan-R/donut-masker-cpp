@@ -1,51 +1,92 @@
 #include "Preprocessor.hpp"
 
-cv::Mat Preprocessor::convertToGray(const cv::Mat& image)
+using namespace cv;
+
+cv::Mat Preprocessor::process(const cv::Mat& input) const
 {
-    cv::Mat gray;
+    CV_Assert(!input.empty());
 
-    cv::cvtColor(
-        image,
-        gray,
-        cv::COLOR_BGR2GRAY);
+    // Step 1
+    Mat labChannel = extractBlueYellowChannel(input);
 
-    return gray;
+    // Step 2
+    Mat illuminationCorrected = correctIllumination(labChannel);
+
+    // Step 3
+    Mat normalized = normalizeContrast(illuminationCorrected);
+
+    // Step 4
+    Mat denoised = reduceNoise(normalized);
+
+    return denoised;
 }
 
-cv::Mat Preprocessor::applyGaussianBlur(const cv::Mat& image)
+cv::Mat Preprocessor::extractBlueYellowChannel(const cv::Mat& input) const
 {
-    cv::Mat blurred;
+    Mat lab;
+    cvtColor(input, lab, COLOR_BGR2Lab);
 
-    cv::GaussianBlur(
-        image,
-        blurred,
-        cv::Size(5,5),
+    std::vector<Mat> channels;
+    split(lab, channels);
+
+    // b-channel emphasizes blue conveyor against donuts
+    return channels[2];
+}
+
+cv::Mat Preprocessor::correctIllumination(const cv::Mat& input) const
+{
+    Mat background;
+
+    // Estimate slow illumination changes
+    GaussianBlur(
+        input,
+        background,
+        Size(151, 151),
         0);
 
-    return blurred;
+    Mat corrected;
+
+    subtract(
+        input,
+        background,
+        corrected);
+
+    normalize(
+        corrected,
+        corrected,
+        0,
+        255,
+        NORM_MINMAX);
+
+    corrected.convertTo(corrected, CV_8U);
+
+    return corrected;
 }
 
-cv::Mat Preprocessor::equalizeHistogram(const cv::Mat& image)
+cv::Mat Preprocessor::normalizeContrast(const cv::Mat& input) const
 {
-    cv::Mat equalized;
+    Mat normalized;
 
-    cv::equalizeHist(
-        image,
-        equalized);
+    normalize(
+        input,
+        normalized,
+        0,
+        255,
+        NORM_MINMAX);
 
-    return equalized;
+    return normalized;
 }
 
-cv::Mat Preprocessor::preprocess(const cv::Mat& image)
+cv::Mat Preprocessor::reduceNoise(const cv::Mat& input) const
 {
-    cv::Mat gray =
-        convertToGray(image);
+    Mat output;
 
-    cv::Mat blur =
-        applyGaussianBlur(gray);
+    bilateralFilter(
+        input,
+        output,
+        9,
+        75,
+        75);
 
-    cv::Mat result =
-        equalizeHistogram(blur);
-
-    return result;
+    return output;
 }

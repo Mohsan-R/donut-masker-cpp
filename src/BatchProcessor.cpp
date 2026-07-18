@@ -1,303 +1,279 @@
 #include "BatchProcessor.hpp"
-#include "ImageLoader.hpp"
-#include "Preprocessor.hpp"
-#include "DonutDetector.hpp"
-#include "CandidateDetector.hpp"
-#include "DonutMaskGenerator.hpp"
-#include "HoleDetector.hpp"
+#include <opencv2/opencv.hpp>
 
+#include <chrono>
 #include <filesystem>
 #include <iostream>
+#include <vector>
 
 namespace fs = std::filesystem;
 
+namespace
+{
+    bool saveImage(const fs::path& path,
+                   const cv::Mat& image)
+    {
+        if (!cv::imwrite(path.string(), image))
+        {
+            std::cerr
+                << "Failed to save: "
+                << path
+                << '\n';
+
+            return false;
+        }
+
+        return true;
+    }
+}
+
 void BatchProcessor::processFolder()
 {
-    ImageLoader loader;
-    Preprocessor preprocessor;
-    DonutDetector detector;
-    CandidateDetector candidateDetector;
-    DonutMaskGenerator maskGenerator;
-    HoleDetector holeDetector;
+    const fs::path current =
+        fs::current_path();
 
-    //----------------------------------------------------
-    // Working Directories
-    //----------------------------------------------------
+    const fs::path inputFolder =
+        current / "input_samples";
 
-    fs::path current = fs::current_path();
+    const fs::path outputFolder =
+        current / "output_samples";
 
-    if (current.filename() == "output_samples")
+    if (!fs::exists(inputFolder))
     {
-        current = current.parent_path();
+        std::cerr
+            << "Input folder not found: "
+            << inputFolder
+            << '\n';
+
+        return;
     }
 
-    fs::path inputFolder = current / "input_samples";
-    fs::path outputFolder = current / "output_samples";
+    const std::vector<std::string> folders =
+    {
+        "",
+        "processed",
+        "threshold",
+        "morphology",
+        "donut_masks",
+        "hole_masks",
+        "overlays"
+    };
 
-    fs::create_directories(outputFolder);
-
-    //----------------------------------------------------
-    // Console Header
-    //----------------------------------------------------
-
-    std::cout << "=========================================\n";
-    std::cout << "         DONUT MASKER CPP\n";
-    std::cout << "=========================================\n\n";
-
-    std::cout << "Working Directory : "
-              << current
-              << "\n";
-
-    std::cout << "Input Folder      : "
-              << inputFolder
-              << "\n";
-
-    std::cout << "Output Folder     : "
-              << outputFolder
-              << "\n\n";
-
-    //----------------------------------------------------
-    // Load Images
-    //----------------------------------------------------
+    for (const auto& folder : folders)
+    {
+        fs::create_directories(
+            outputFolder / folder);
+    }
 
     auto imagePaths =
-        loader.getImagePaths(inputFolder.string());
+        loader.getImagePaths(
+            inputFolder.string());
 
-    std::cout << "Images Found : "
-              << imagePaths.size()
-              << "\n\n";
+    if (imagePaths.empty())
+    {
+        std::cout
+            << "No images found in "
+            << inputFolder
+            << '\n';
 
-    int count = 1;
+        return;
+    }
 
-    //----------------------------------------------------
-    // Process Images
-    //----------------------------------------------------
+    std::cout
+        << "\n=====================================\n";
+    std::cout
+        << "Donut Inspection Pipeline\n";
+    std::cout
+        << "Images : "
+        << imagePaths.size()
+        << '\n';
+    std::cout
+        << "=====================================\n\n";
+
+    size_t processed = 0;
+    size_t failed = 0;
+    double totalTime = 0.0;
+
+    int imageIndex = 1;
+
+    //-----------------------------------------
+    // Create once
+    //-----------------------------------------
+
+    BoundaryRefiner refiner;
+
+    //-----------------------------------------
+    // Process images
+    //-----------------------------------------
 
     for (const auto& imagePath : imagePaths)
     {
+        auto start =
+            std::chrono::steady_clock::now();
+
         cv::Mat image =
             loader.loadImage(imagePath);
 
         if (image.empty())
         {
+            ++failed;
+
             std::cout
-                << "Failed to load : "
+                << "Cannot load "
                 << imagePath
-                << "\n\n";
+                << '\n';
 
             continue;
         }
 
-        //----------------------------------------------------
-        // Step 1 - Preprocessing
-        //----------------------------------------------------
+        //-----------------------------------------
+        // Preprocessing
+        //-----------------------------------------
 
-        cv::Mat processed =
-            preprocessor.preprocess(image);
+        cv::Mat processedImage =
+            preprocessor.process(image);
 
-        //----------------------------------------------------
-        // Step 1 - Otsu Threshold
-        //----------------------------------------------------
+        //-----------------------------------------
+        // Detection
+        //-----------------------------------------
 
-        cv::Mat otsu =
-            detector.removeNoise(
-                detector.otsuThreshold(processed));
+        DetectionResult detection =
+            detector.detect(processedImage);
 
-        //----------------------------------------------------
-        // Step 1 - Adaptive Threshold
-        //----------------------------------------------------
+        //-----------------------------------------
+        // Boundary Refinement
+        //-----------------------------------------
 
-        cv::Mat adaptive =
-            detector.removeNoise(
-                detector.adaptiveThresholdImage(processed));
+        RefinementResult refined =
+            refiner.refine(detection);
 
-        //----------------------------------------------------
-        // Step 1 - Candidate Detection
-        //----------------------------------------------------
+        //-----------------------------------------
+        // Overlay
+        //-----------------------------------------
 
-        auto candidates =
-            candidateDetector.detectCandidates(processed);
-
-        //----------------------------------------------------
-        // Step 1 - Initial Donut Mask
-        //----------------------------------------------------
-
-        cv::Mat donutMask =
-            maskGenerator.generateMask(
-                image.size(),
-                candidates);
-
-        //----------------------------------------------------
-        // Step 1 - Initial Hole Mask
-        //----------------------------------------------------
-
-        cv::Mat holeMask =
-            holeDetector.generateHoleMask(
-                processed,
-                candidates);
-
-        //----------------------------------------------------
-        // Draw Candidate Detection
-        //----------------------------------------------------
-
-        cv::Mat candidateImage =
+        cv::Mat overlay =
             image.clone();
 
-        for (const auto& candidate : candidates)
-        {
-            cv::circle(
-                candidateImage,
-                candidate.center,
-                static_cast<int>(candidate.radius),
-                cv::Scalar(0,255,0),
-                3);
+        cv::drawContours(
+            overlay,
+            refined.refinedContours,
+            -1,
+            cv::Scalar(0,255,0),
+            2);
 
-            cv::circle(
-                candidateImage,
-                candidate.center,
-                3,
-                cv::Scalar(0,0,255),
-                -1);
+        std::vector<std::vector<cv::Point>>
+            holeContours;
+
+        cv::findContours(
+            refined.refinedHoleMask,
+            holeContours,
+            cv::RETR_EXTERNAL,
+            cv::CHAIN_APPROX_SIMPLE);
+
+        cv::drawContours(
+            overlay,
+            holeContours,
+            -1,
+            cv::Scalar(0,0,255),
+            2);
+
+        //-----------------------------------------
+        // Save Results
+        //-----------------------------------------
+
+        const fs::path filename =
+            fs::path(imagePath).filename();
+
+        bool success = true;
+
+        success &= saveImage(
+            outputFolder / "processed" / filename,
+            processedImage);
+
+        success &= saveImage(
+            outputFolder / "threshold" / filename,
+            detection.threshold);
+
+        success &= saveImage(
+            outputFolder / "morphology" / filename,
+            detection.morphology);
+
+        success &= saveImage(
+            outputFolder / "donut_masks" / filename,
+            refined.refinedDonutMask);
+
+        success &= saveImage(
+            outputFolder / "hole_masks" / filename,
+            refined.refinedHoleMask);
+
+        success &= saveImage(
+            outputFolder / "overlays" / filename,
+            overlay);
+
+        if (!success)
+        {
+            std::cerr
+                << "One or more outputs could not be saved for "
+                << filename.string()
+                << '\n';
         }
 
-        //----------------------------------------------------
-        // Save Processed Image
-        //----------------------------------------------------
+        //-----------------------------------------
+        // Statistics
+        //-----------------------------------------
 
-        fs::path processedFile =
-            outputFolder /
-            ("processed_" +
-             fs::path(imagePath).filename().string());
+        auto end =
+            std::chrono::steady_clock::now();
 
-        cv::imwrite(
-            processedFile.string(),
-            processed);
+        auto duration =
+            std::chrono::duration_cast<
+                std::chrono::milliseconds>(
+                    end - start);
 
-        //----------------------------------------------------
-        // Save Otsu
-        //----------------------------------------------------
+        totalTime += duration.count();
 
-        fs::path otsuFile =
-            outputFolder /
-            ("otsu_" +
-             fs::path(imagePath).filename().string());
+        ++processed;
 
-        cv::imwrite(
-            otsuFile.string(),
-            otsu);
-
-        //----------------------------------------------------
-        // Save Adaptive
-        //----------------------------------------------------
-
-        fs::path adaptiveFile =
-            outputFolder /
-            ("adaptive_" +
-             fs::path(imagePath).filename().string());
-
-        cv::imwrite(
-            adaptiveFile.string(),
-            adaptive);
-
-        //----------------------------------------------------
-        // Save Candidate Detection
-        //----------------------------------------------------
-
-        fs::path candidateFile =
-            outputFolder /
-            ("candidate_" +
-             fs::path(imagePath).filename().string());
-
-        cv::imwrite(
-            candidateFile.string(),
-            candidateImage);
-
-        //----------------------------------------------------
-        // Save Donut Mask
-        //----------------------------------------------------
-
-        fs::path donutMaskFile =
-            outputFolder /
-            ("donut_mask_" +
-             fs::path(imagePath).filename().string());
-
-        cv::imwrite(
-            donutMaskFile.string(),
-            donutMask);
-
-        //----------------------------------------------------
-        // Save Hole Mask
-        //----------------------------------------------------
-
-        fs::path holeMaskFile =
-            outputFolder /
-            ("hole_mask_" +
-             fs::path(imagePath).filename().string());
-
-        cv::imwrite(
-            holeMaskFile.string(),
-            holeMask);
-
-        //----------------------------------------------------
-        // Console Output
-        //----------------------------------------------------
-
-        std::cout << "----------------------------------------\n";
-
-        std::cout << "Image        : "
-                  << count++
-                  << "\n";
-
-        std::cout << "File         : "
-                  << fs::path(imagePath).filename().string()
-                  << "\n";
-
-        std::cout << "Width        : "
-                  << image.cols
-                  << "\n";
-
-        std::cout << "Height       : "
-                  << image.rows
-                  << "\n";
-
-        std::cout << "Channels     : "
-                  << image.channels()
-                  << "\n";
-
-        std::cout << "Candidates   : "
-                  << candidates.size()
-                  << "\n";
-
-        std::cout << "Saved        : "
-                  << processedFile.filename().string()
-                  << "\n";
-
-        std::cout << "Saved        : "
-                  << otsuFile.filename().string()
-                  << "\n";
-
-        std::cout << "Saved        : "
-                  << adaptiveFile.filename().string()
-                  << "\n";
-
-        std::cout << "Saved        : "
-                  << candidateFile.filename().string()
-                  << "\n";
-
-        std::cout << "Saved        : "
-                  << donutMaskFile.filename().string()
-                  << "\n";
-
-        std::cout << "Saved        : "
-                  << holeMaskFile.filename().string()
-                  << "\n\n";
+        std::cout
+            << "["
+            << imageIndex++
+            << "/"
+            << imagePaths.size()
+            << "] "
+            << filename.string()
+            << " | Donuts: "
+            << refined.refinedContours.size()
+            << " | "
+            << duration.count()
+            << " ms\n";
     }
 
-    //----------------------------------------------------
-    // Finished
-    //----------------------------------------------------
+    //-----------------------------------------
+    // Summary
+    //-----------------------------------------
 
-    std::cout << "=========================================\n";
-    std::cout << "Batch Processing Complete\n";
-    std::cout << "=========================================\n";
+    std::cout
+        << "\n=====================================\n";
+    std::cout
+        << "Batch Processing Complete\n";
+    std::cout
+        << "=====================================\n";
+    std::cout
+        << "Processed : "
+        << processed
+        << '\n';
+    std::cout
+        << "Failed    : "
+        << failed
+        << '\n';
+
+    if (processed > 0)
+    {
+        std::cout
+            << "Average   : "
+            << totalTime / processed
+            << " ms/image\n";
+    }
+
+    std::cout << '\n';
 }

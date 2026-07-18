@@ -5,12 +5,15 @@
 class Preprocessor
 {
 public:
+    Preprocessor() = default;
+    ~Preprocessor() = default;
 
-    cv::Mat convertToGray(const cv::Mat& image);
+    // Complete preprocessing pipeline
+    cv::Mat process(const cv::Mat& input) const;
 
-    cv::Mat applyGaussianBlur(const cv::Mat& image);
-
-    cv::Mat equalizeHistogram(const cv::Mat& image);
-
-    cv::Mat preprocess(const cv::Mat& image);
+private:
+    cv::Mat extractBlueYellowChannel(const cv::Mat& input) const;
+    cv::Mat correctIllumination(const cv::Mat& input) const;
+    cv::Mat normalizeContrast(const cv::Mat& input) const;
+    cv::Mat reduceNoise(const cv::Mat& input) const;
 };
