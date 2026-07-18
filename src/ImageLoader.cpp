@@ -6,10 +6,12 @@
 
 namespace fs = std::filesystem;
 
+// Scan a folder and collect all supported image file paths.
 std::vector<std::string> ImageLoader::getImagePaths(const std::string& folderPath)
 {
     std::vector<std::string> imagePaths;
 
+    // Return an empty list if the folder does not exist.
     if (!fs::exists(folderPath))
     {
         std::cerr << "Folder not found: "
@@ -19,6 +21,7 @@ std::vector<std::string> ImageLoader::getImagePaths(const std::string& folderPat
         return imagePaths;
     }
 
+    // Inspect each entry in the directory and keep supported image files.
     for (const auto& entry : fs::directory_iterator(folderPath))
     {
         if (!entry.is_regular_file())
@@ -32,6 +35,7 @@ std::vector<std::string> ImageLoader::getImagePaths(const std::string& folderPat
             extension.begin(),
             ::tolower);
 
+        // Accept common image formats used by the pipeline.
         if (extension == ".jpg" ||
             extension == ".jpeg" ||
             extension == ".png" ||
@@ -41,11 +45,13 @@ std::vector<std::string> ImageLoader::getImagePaths(const std::string& folderPat
         }
     }
 
+    // Keep the output order deterministic.
     std::sort(imagePaths.begin(), imagePaths.end());
 
     return imagePaths;
 }
 
+// Load an image from disk into an OpenCV matrix.
 cv::Mat ImageLoader::loadImage(const std::string& imagePath)
 {
     return cv::imread(imagePath);

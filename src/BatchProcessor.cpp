@@ -97,13 +97,13 @@ void BatchProcessor::processFolder()
     int imageIndex = 1;
 
     //-----------------------------------------
-    // Create once
+    // Create the boundary refiner once and reuse it
     //-----------------------------------------
 
     BoundaryRefiner refiner;
 
     //-----------------------------------------
-    // Process images
+    // Process each input image in the batch
     //-----------------------------------------
 
     for (const auto& imagePath : imagePaths)
@@ -127,28 +127,28 @@ void BatchProcessor::processFolder()
         }
 
         //-----------------------------------------
-        // Preprocessing
+        // Preprocess the image before detection
         //-----------------------------------------
 
         cv::Mat processedImage =
             preprocessor.process(image);
 
         //-----------------------------------------
-        // Detection
+        // Detect the donut regions in the image
         //-----------------------------------------
 
         DetectionResult detection =
             detector.detect(processedImage);
 
         //-----------------------------------------
-        // Boundary Refinement
+        // Refine the detected donut and hole masks
         //-----------------------------------------
 
         RefinementResult refined =
             refiner.refine(detection);
 
         //-----------------------------------------
-        // Overlay
+        // Create a visualization overlay
         //-----------------------------------------
 
         cv::Mat overlay =
@@ -178,7 +178,7 @@ void BatchProcessor::processFolder()
             2);
 
         //-----------------------------------------
-        // Save Results
+        // Save the intermediate and final results
         //-----------------------------------------
 
         const fs::path filename =
@@ -219,7 +219,7 @@ void BatchProcessor::processFolder()
         }
 
         //-----------------------------------------
-        // Statistics
+        // Report timing and processing statistics
         //-----------------------------------------
 
         auto end =
@@ -249,7 +249,7 @@ void BatchProcessor::processFolder()
     }
 
     //-----------------------------------------
-    // Summary
+    // Print the final batch summary
     //-----------------------------------------
 
     std::cout

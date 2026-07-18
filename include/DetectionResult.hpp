@@ -3,6 +3,7 @@
 #include <opencv2/opencv.hpp>
 #include <vector>
 
+// Stores the intermediate and final outputs of donut detection.
 struct DetectionResult
 {
     cv::Mat threshold;
