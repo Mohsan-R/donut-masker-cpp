@@ -285,8 +285,7 @@ To keep the GitHub repository lightweight, only representative sample images are
 
 The complete evaluation dataset (10 input images) and the corresponding generated outputs are available through the following links:
 
-- **Input Dataset:** *(Add your Google Drive / OneDrive link here)*
-- **Output Results:** *(Add your Google Drive / OneDrive link here)*
+https://drive.google.com/drive/folders/1WIhZnx1vvgOXIsDGc1U9oezuqJVsEGA_?usp=drive_link
 
 ---
 
@@ -316,4 +315,3 @@ BS Computer Science (FAST-NUCES)
 
 GitHub: https://github.com/Mohsan-R
 
-https://drive.google.com/drive/folders/1WIhZnx1vvgOXIsDGc1U9oezuqJVsEGA_?usp=drive_link
