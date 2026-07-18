@@ -284,8 +284,7 @@ Additional documentation is available in the `docs/` directory.
 To keep the GitHub repository lightweight, only representative sample images are included.
 
 The complete evaluation dataset (10 input images) and the corresponding generated outputs are available through the following links:
-
-https://drive.google.com/drive/folders/1WIhZnx1vvgOXIsDGc1U9oezuqJVsEGA_?usp=drive_link
+https://drive.google.com/drive/folders/1WIhZnx1vvgOXIsDGc1U9oezuqJVsEGA_?usp=sharing
 
 ---
 
