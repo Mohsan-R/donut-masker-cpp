@@ -1,37 +1,40 @@
-# 🍩 Donut Mask Generation using Classical Computer Vision (C++17 + OpenCV)
+# Donut Mask Generation using Classical Computer Vision (C++17 & OpenCV)
 
-An industrial computer vision pipeline developed in **C++17** using **OpenCV** to detect donuts on a conveyor belt and generate accurate outer and inner masks for inspection.
+An industrial image processing pipeline that automatically detects donuts and generates accurate donut and hole masks from conveyor belt images using **classical computer vision techniques** implemented in **C++17** with **OpenCV**.
 
-This project was developed as part of the **XIS AI & Computer Vision Technical Assessment** and demonstrates robust image preprocessing, segmentation, contour analysis, geometric filtering, and boundary refinement using classical image processing techniques.
-
----
-
-# Features
-
-- Classical Computer Vision (No Machine Learning)
-- Batch image processing
-- Robust preprocessing for uneven illumination
-- Noise suppression using morphological operations
-- Automatic thresholding using Otsu's method
-- Donut contour detection
-- Geometric contour filtering
-- Inner hole extraction
-- Boundary refinement and contour smoothing
-- Overlay visualization for inspection
-- Modular C++17 architecture
+This project was developed as part of the **XIS AI & Computer Vision Technical Assessment**. The implementation avoids deep learning entirely and instead relies on robust image processing, morphology, contour analysis, and geometric filtering.
 
 ---
 
-# Processing Pipeline
+## Features
+
+- Classical Computer Vision (No Deep Learning)
+- C++17 Implementation
+- OpenCV 4.x
+- Batch Processing of Multiple Images
+- Automatic Donut Detection
+- Accurate Hole Detection
+- Binary Donut Mask Generation
+- Boundary Refinement
+- Overlay Visualization
+- Modular Architecture
+- CMake Build System
+
+---
+
+## Processing Pipeline
 
 ```
 Input Image
       │
       ▼
-Image Preprocessing
+Image Loading
       │
       ▼
-Thresholding
+Preprocessing
+      │
+      ▼
+Adaptive Thresholding
       │
       ▼
 Morphological Processing
@@ -52,287 +55,260 @@ Hole Extraction
 Boundary Refinement
       │
       ▼
-Final Overlay Visualization
+Overlay Generation
 ```
 
 ---
 
-# Project Structure
+## Repository Structure
 
 ```
-donut-masker-cpp/
+project-root/
+│
+├── src/                     # C++ source files
+├── include/                 # Header files
+├── docs/
+│   ├── METHODOLOGY.md
+│   ├── POSTPROCESSING.md
+│   ├── RESULTS.md
+│   └── SETUP.md
+│
+├── input_samples/           # Sample input images
+├── output_samples/          # Sample outputs
 │
 ├── CMakeLists.txt
 ├── README.md
 ├── LICENSE
-├── .gitignore
-│
-├── include/
-│   ├── BatchProcessor.hpp
-│   ├── BoundaryRefiner.hpp
-│   ├── DonutDetector.hpp
-│   ├── ImageLoader.hpp
-│   └── Preprocessor.hpp
-│
-├── src/
-│   ├── main.cpp
-│   ├── BatchProcessor.cpp
-│   ├── BoundaryRefiner.cpp
-│   ├── DonutDetector.cpp
-│   ├── ImageLoader.cpp
-│   └── Preprocessor.cpp
-│
-├── docs/
-│
-├── input_samples/
-│
-└── output_samples/
-    ├── processed/
-    ├── threshold/
-    ├── morphology/
-    ├── donut_masks/
-    ├── hole_masks/
-    └── overlays/
+└── .gitignore
 ```
 
 ---
 
-# Technologies
+## Technologies
 
 - C++17
 - OpenCV 4.x
 - CMake
-- STL
-- Visual Studio 2022
+- Git
 
 ---
 
-# Image Processing Pipeline
+## Image Processing Methodology
 
-## 1. Image Preprocessing
+The implementation follows a fully classical image processing pipeline.
 
-The preprocessing stage prepares images for robust segmentation under varying lighting conditions.
+### 1. Image Loading
 
-### Operations
+- Load conveyor images
+- Validate supported image formats
 
-- Convert image to grayscale
+### 2. Preprocessing
+
+- Convert to grayscale
+- Illumination normalization
 - Contrast enhancement
-- Background normalization
-- Noise reduction
 - Gaussian smoothing
 
-Purpose:
+### 3. Thresholding
 
-- Reduce illumination variation
-- Improve foreground separation
-- Suppress sensor noise
-- Preserve donut boundaries
+- Otsu's Automatic Thresholding
 
----
-
-## 2. Thresholding
-
-Global Otsu thresholding is applied to automatically separate donuts from the conveyor background.
-
-Advantages:
-
-- Automatic threshold selection
-- Robust across varying lighting
-- No manual tuning required
-
----
-
-## 3. Morphological Processing
-
-Morphological operations improve binary mask quality.
-
-Operations:
+### 4. Morphological Processing
 
 - Opening
 - Closing
 - Median filtering
 
-Purpose:
+### 5. Contour Detection
 
-- Remove isolated noise
-- Repair broken boundaries
-- Smooth object edges
+- Connected contour extraction
+- Geometric feature computation
 
----
+### 6. Geometric Filtering
 
-## 4. Contour Detection
-
-Contours are extracted from the cleaned binary mask.
-
-Small connected components are removed before the final contour extraction to reduce false detections.
-
----
-
-## 5. Geometric Filtering
-
-Candidate contours are filtered using geometric properties.
-
-Filtering criteria include:
-
-- Minimum area
-- Maximum area
-- Aspect ratio
-- Circularity
-- Solidity
-- Extent
-- Bounding box constraints
-
-These filters reject background artifacts while preserving valid donut candidates.
-
----
-
-## 6. Donut Mask Generation
-
-Validated contours are rendered as filled binary masks to create the outer donut regions.
-
----
-
-## 7. Hole Extraction
-
-Inner donut holes are extracted from validated donut regions using binary mask operations and contour filtering.
-
-Hole candidates are validated using:
+Contours are validated using:
 
 - Area
 - Circularity
+- Solidity
+- Extent
+- Bounding box size
 
-Only valid hole regions are retained.
+### 7. Donut Mask Generation
 
----
+Accepted contours are rendered into binary donut masks.
 
-## 8. Boundary Refinement
+### 8. Hole Detection
 
-Final masks are refined using:
+Hole candidates are extracted using contour-based geometric validation and subtracted from the donut mask.
 
-- Morphological smoothing
+### 9. Boundary Refinement
+
+Refinement consists of:
+
+- Morphological opening
+- Morphological closing
+- Median filtering
 - Contour approximation
-- Boundary cleanup
 
-This improves contour quality and reduces jagged edges.
+### 10. Overlay Generation
 
----
+Final contours are drawn over the original image for visual verification.
 
-# Output
-
-For each input image the pipeline generates:
-
-| Folder | Description |
-|---------|-------------|
-| processed | Preprocessed image |
-| threshold | Binary threshold image |
-| morphology | Morphological processing result |
-| donut_masks | Final donut masks |
-| hole_masks | Extracted hole masks |
-| overlays | Final inspection overlay |
-
----
-
-# Build Requirements
-
-- CMake 3.16 or newer
-- C++17 compatible compiler
-- OpenCV 4.x
-
----
-
-# Build Instructions
-
-```bash
-git clone <repository-url>
-
-cd donut-masker-cpp
-
-mkdir build
-
-cd build
-
-cmake ..
-
-cmake --build . --config Release
-```
-
----
-
-# Run
-
-Place test images inside:
-
-```
-input_samples/
-```
-
-Run:
-
-```
-donut_masker.exe
-```
-
-Generated results are saved automatically inside:
-
-```
-output_samples/
-```
-
----
-
-# Design Principles
-
-The project follows a modular architecture where each component has a single responsibility.
-
-| Module | Responsibility |
-|---------|----------------|
-| ImageLoader | Image loading |
-| Preprocessor | Image enhancement |
-| DonutDetector | Segmentation and contour detection |
-| BoundaryRefiner | Boundary refinement |
-| BatchProcessor | Batch processing and output generation |
-
----
-
-# Future Improvements
-
-Possible future enhancements include:
-
-- Adaptive local thresholding
-- Watershed-based separation for touching donuts
-- Ellipse fitting for improved hole estimation
-- Parallel image processing
-- GPU acceleration using CUDA/OpenCL
-- Automatic parameter optimization
-- Quality measurement of detected donuts
+- Green → Donut Boundary
+- Red → Hole Boundary
 
 ---
 
 # Sample Results
 
-The pipeline produces:
+The pipeline was evaluated on a dataset of **10 industrial conveyor-belt images**.
 
-- Binary segmentation
-- Refined donut masks
-- Hole masks
-- Contour overlays
-- Batch processing statistics
+To keep the repository lightweight, only one representative example is included below.
 
-Example output folders:
+## Original Image
 
+![Original](docs/Original.jpg)
+
+---
+
+## Threshold
+
+![Threshold](docs/Threshold.jpg)
+
+---
+
+## Morphology
+
+![Morphology](docs/Morphology.jpg)
+
+---
+
+## Donut Mask
+
+![Donut Mask](docs/Donut_Mask.jpg)
+
+---
+
+## Hole Mask
+
+![Hole Mask](docs/Hole_Mask.jpg)
+
+---
+
+## Final Overlay
+
+![Overlay](docs/Overlay.jpg)
+
+---
+
+## Performance Summary
+
+The proposed pipeline demonstrates robust performance across the evaluation dataset.
+
+### Successfully Handles
+
+- Uneven illumination
+- Conveyor belt texture
+- Multiple donuts
+- Partial donuts
+- Background noise
+- Small reflections
+- Corner vignetting
+
+The same parameter configuration is applied to all images without manual tuning.
+
+---
+
+## Build Instructions
+
+Clone the repository.
+
+```bash
+git clone https://github.com/Mohsan-R/donut-masker-cpp.git
+cd donut-masker-cpp
 ```
-output_samples/
-├── processed/
-├── threshold/
-├── morphology/
-├── donut_masks/
-├── hole_masks/
-└── overlays/
+
+Create a build directory.
+
+```bash
+mkdir build
+cd build
+```
+
+Configure the project.
+
+```bash
+cmake ..
+```
+
+Build.
+
+```bash
+cmake --build .
 ```
 
 ---
 
-# Author
+## Usage
+
+Run the executable:
+
+```bash
+donut_masker --input ../input_samples --output ../output_samples
+```
+
+Example:
+
+```bash
+donut_masker --input input_samples --output output_samples
+```
+
+---
+
+## Documentation
+
+Additional documentation is available in the `docs/` directory.
+
+| File | Description |
+|------|-------------|
+| METHODOLOGY.md | Initial mask generation methodology and design rationale |
+| POSTPROCESSING.md | Boundary refinement and post-processing techniques |
+| RESULTS.md | Experimental results and performance evaluation |
+| SETUP.md | Environment setup, dependencies, and build instructions |
+
+---
+
+## Full Dataset and Results
+
+To keep the GitHub repository lightweight, only representative sample images are included.
+
+The complete evaluation dataset (10 input images) and the corresponding generated outputs are available through the following links:
+
+- **Input Dataset:** *(Add your Google Drive / OneDrive link here)*
+- **Output Results:** *(Add your Google Drive / OneDrive link here)*
+
+---
+
+## Future Improvements
+
+Potential enhancements include:
+
+- Adaptive illumination correction
+- Ellipse-based contour fitting
+- Touching object separation
+- Performance optimization
+- Cross-platform continuous integration
+
+---
+
+## License
+
+This project is released under the MIT License.
+
+---
+
+## Author
 
 **Mohsan Raza**
 
@@ -340,10 +316,4 @@ BS Computer Science (FAST-NUCES)
 
 GitHub: https://github.com/Mohsan-R
 
-output images
- 
-![alt text](donut1.jpg)
-![alt text](donut1-1.jpg)
-![alt text](donut1-2.jpg)
-![alt text](donut1-3.jpg)
-![alt text](donut1-4.jpg)
+https://drive.google.com/drive/folders/1WIhZnx1vvgOXIsDGc1U9oezuqJVsEGA_?usp=drive_link
